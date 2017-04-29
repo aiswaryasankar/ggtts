@@ -22,6 +22,38 @@ class Item:
   Please complete the following function.
 ===============================================================================
 """
+def sortingFunc(x):
+    if x.cost == 0 and x.weight == 0:
+        return x.profit + x.profit
+
+    if x.cost == 0:
+        return x.profit/x.weight + x.profit
+
+    if x.weight == 0:
+        return x.profit/x.cost + x.profit
+
+    return x.profit/x.cost + x.profit/x.weight
+
+def greedyPick(W, C, N, items):
+    items.sort(key=lambda x: sortingFunc(x), reverse=True)
+
+    currCost = 0.0
+    currWeight = 0.0
+    profit = 0.0
+    result = []
+    print("LEN INPUT: ", len(items))
+    for x in items:
+        if currCost + x.cost > C or currWeight + x.weight > W:
+            continue
+        else:
+            currCost += x.cost
+            currWeight += x.weight
+            profit += x.profit
+            result.append(x.name)
+    print("PROFIT: ", profit)
+    print("LEN OUTPUT: ", len(result))
+    return result
+    # return ", ".join(result)
 
 def greedyChoose(W, C, N, items):
   itemsList = list(items)
@@ -153,7 +185,8 @@ def solve(P, M, N, C, items, constraints):
   """
   lst = []
   #result = knapsackV2(int(P), int(M), N, items)
-  result = greedyChoose(int(P), int(M), N, items)
+  # result = greedyChoose(int(P), int(M), N, items)
+  result = greedyPick(P, M, N, items)
   lst.append(result)
   return lst
 
@@ -166,18 +199,40 @@ def solve(P, M, N, C, items, constraints):
 def noSort (constraint, classItemMap):
   return constraint
 
+def sortProfitWCRatio(constraint, classItempMap):
+    constraint.sort(key = lambda x: profitRatio(x, classItemMap), reverse=True)
+    return (constraint)
+
+def profitRatio(x, classItemMap):
+    if len(classItemMap[x]) == 0:
+        return -1
+
+    totalRatio = 0
+    for item in classItemMap[x]:
+        if x.cost == 0 and x.weight == 0:
+            totalRatio += x.profit
+
+        if x.cost == 0:
+            totalRatio += x.profit/x.weight + x.profit
+
+        if x.weight == 0:
+            totalRatio +=  x.profit/x.cost + x.profit
+        else:
+            totalRatio += x.profit/x.cost + x.profit/x.weight
+    return totalRatio / (float) (len(classItemMap[x]))
+
 def sortMinCost(constraint, classItemMap):
   # Sort the constraint by the class that has minimum total cost for all items
   #constraint.sort(key = lambda x: sum(classItemMap[x], lambda item: item.cost), reverse=True)
-  print('constraint before ' + str(constraint))
+  # print('constraint before ' + str(constraint))
   constraint.sort(key = lambda x: costSum(x, classItemMap))
-  print('constraint after ' + str(constraint))
+  # print('constraint after ' + str(constraint))
   return (constraint)
 
 def costSum(x, classItemMap):
     if len(classItemMap[x]) == 0:
         return float('inf')
-    return sum([item.cost for item in classItemMap[x]])
+    return sum([item.cost for item in classItemMap[x]])/len(classItemMap[x])
 
 def sortMinWeight(constraint, classItemMap):
   # Sort the constraint by the class that has minimum total weight for all items
@@ -187,7 +242,7 @@ def sortMinWeight(constraint, classItemMap):
 def weightSum(x, classItemMap):
     if len(classItemMap[x]) == 0:
         return float('inf')
-    return sum([item.weight for item in classItemMap[x]])
+    return sum([item.weight for item in classItemMap[x]])/len(classItemMap[x])
 
 def sortMaxProfit(constraint, classItemMap):
   # Sort the constraint by the class that has maximum total profit for all items
@@ -207,7 +262,7 @@ def createItemSet(maxCanChooseSet, classItemMap):
     for elem in classItemMap[cls]:
       allItemSet.add(elem)
 
-  print('the number of Items we can choose from is ' + str(len(allItemSet)))
+  # print('the number of Items we can choose from is ' + str(len(allItemSet)))
   return list(allItemSet)
 
 
@@ -238,12 +293,13 @@ def read_input(filename):
        name, cls, weight, cost, val = f.readline().split(";")
        temp = Item(name, int(cls.strip()), float(weight.strip()), float(cost.strip()), float(val.strip()))
 
-       if int(cls.strip()) not in classItemMap:
-         classItemMap[int(cls.strip())] = {temp}
-       else:
-         classItemMap[int(cls.strip())].add(temp)
+       if (float(val) - float(cost) > 0):
+           if int(cls.strip()) not in classItemMap:
+             classItemMap[int(cls.strip())] = {temp}
+           else:
+             classItemMap[int(cls.strip())].add(temp)
 
-       items.append((name, int(cls), float(weight), float(cost), float(val)))
+           items.append((name, int(cls), float(weight), float(cost), float(val)))
     #print('classItemMap is ' +str(classItemMap))
     #print(classItemMap)
     masterList = []
@@ -252,7 +308,7 @@ def read_input(filename):
       constraint = list(eval(f.readline()))
       masterList.append(constraint)
 
-    funcNames = [sortNumItems, sortMinWeight, sortMaxProfit, sortMinCost]
+    funcNames = [sortNumItems, sortMinWeight, sortMaxProfit, sortMinCost, sortProfitWCRatio]
     #funcNames = [noSort]
     maxCanChoose = -1
     maxCanChooseSet = {}
@@ -271,7 +327,7 @@ def read_input(filename):
       for constraint in masterList:
         # Function that calls the different sorting algorithms and returns whichever one results in the most classes
         constraint = func(constraint, classItemMap)
-        print('calling function ' + str(func))
+        # print('calling function ' + str(func))
         l = 0
         #while (l < len(constraint) and (constraint[l] in noChoose or constraint[l] in canChoose)):
         while (l < len(constraint) and (constraint[l] in noChoose)):
@@ -289,10 +345,10 @@ def read_input(filename):
             canChoose = canChoose.difference(noChoose)
             # print(str(len(canChoose)))
             # print(str(len(noChoose)))
-          print('updating difference')
+        #   print('updating difference')
           canChoose = canChoose.difference(noChoose)
-          if len(canChoose & noChoose) > 0:
-            print('after diff ' + str(canChoose & noChoose))
+        #   if len(canChoose & noChoose) > 0:
+        #     print('after diff ' + str(canChoose & noChoose))
 
       # Go through and check if number you can choose from is greatest using this func
       if len(canChoose) > maxCanChoose:
@@ -302,13 +358,13 @@ def read_input(filename):
         maxCanChooseSet = canChoose
         maxFunc = func
 
-    print('there should not be any overlap btwn canChoose and noChoose' + str(canChoose & noChoose))
-    print('canChoose ' + str(len(canChoose)))
-    print('above length should be less than ' + str(C))
-    print('noChoose ' + str(len(noChoose)))
-    print('max number of classes to choose from ' + str(len(canChoose)))
-    #print('max canChoose set ' + str(maxCanChooseSet))
-    print('max func ' + str(maxFunc))
+    # print('there should not be any overlap btwn canChoose and noChoose' + str(canChoose & noChoose))
+    # print('canChoose ' + str(len(canChoose)))
+    # print('above length should be less than ' + str(C))
+    # print('noChoose ' + str(len(noChoose)))
+    # print('max number of classes to choose from ' + str(len(canChoose)))
+    # #print('max canChoose set ' + str(maxCanChooseSet))
+    # print('max func ' + str(maxFunc))
     #print('number of classes no choose from ' + str(len(noChoose)))
     #print(constraints)
 
