@@ -26,7 +26,7 @@ class Item:
 """
 problem_file_name = ""
 
-def sortingFunc(x):
+def sortingFunc(x, C, W):
     if x.cost == 0 and x.weight == 0:
         return x.profit + x.profit
 
@@ -38,7 +38,7 @@ def sortingFunc(x):
 
     return x.profit/x.cost + x.profit/x.weight
 
-def sortingFunc2(x):
+def sortingFunc2(x, C, W):
     if x.cost == 0 and x.weight == 0:
         return x.profit + x.profit
 
@@ -50,7 +50,7 @@ def sortingFunc2(x):
 
     return x.profit / (x.cost + x.weight)
 
-def sortingFunc3(x):
+def sortingFunc3(x, C, W):
     if x.cost == 0 and x.weight == 0:
         return x.profit + x.profit
 
@@ -62,7 +62,7 @@ def sortingFunc3(x):
 
     return x.profit/x.cost + x.profit/x.weight
 
-def sortingFunc4(x):
+def sortingFunc4(x, C, W):
     if x.cost == 0 and x.weight == 0:
         return x.profit + x.profit
 
@@ -74,7 +74,7 @@ def sortingFunc4(x):
 
     return x.profit/(x.cost * x.profit)
 
-def sortingFunc5(x):
+def sortingFunc5(x, C, W):
     if x.cost == 0 and x.weight == 0:
         return x.profit + x.profit
 
@@ -84,22 +84,27 @@ def sortingFunc5(x):
     if x.weight == 0:
         return x.profit/x.cost + x.profit
 
-    return x.profit / np.log(x.cost * x.profit)
+    if float(x.weight) / W > 0.5 or float(x.cost) / C > 0.5:
+      print('Weight or cost ratio too large')
+      return 0.0
 
-def sortingFunc6(x):
+    return x.profit/(x.cost * x.profit)
+    
+
+def sortingFunc6(x, C, W):
   pass
 
 
 
 def greedyPick(W, C, N, items):
 
-    sorts = [sortingFunc, sortingFunc2, sortingFunc3, sortingFunc4]
+    sorts = [sortingFunc, sortingFunc2, sortingFunc3, sortingFunc4, sortingFunc5]
     maxProfit = 0.0
     masterResult = []
     maxFunc = ''
 
     for sort in sorts:
-      items.sort(key=lambda x: sort(x), reverse=True)
+      items.sort(key=lambda x: sort(x, C, W), reverse=True)
 
       currCost = 0.0
       currWeight = 0.0
@@ -180,10 +185,43 @@ def solve(P, M, N, C, items, constraints):
 def noSort (constraint, classItemMap):
   return constraint
 
-def sortRatio1(constraint, classItemMap):
-  constraint.sort(key = lambda x: costSum(x, classItemMap))
+def sortRatio1(x, classItemMap):
+    if len(classItemMap[x]) == 0:
+        return -1
 
-# def sortRatio2
+    totalRatio = 0.0
+    for item in classItemMap[x]:
+        if item.cost == 0 and item.weight == 0:
+            totalRatio += 2 * item.profit
+        elif item.cost == 0:
+            totalRatio += item.profit/item.weight + item.profit
+        elif item.weight == 0:
+            totalRatio +=  item.profit/item.cost + item.profit
+        else:
+            if (item.cost == 0 or item.weight == 0):
+                print("Cost: ", item.cost)
+                print("Weight: ", item.weight)
+            totalRatio += item.profit / (item.cost + item.weight)
+    return totalRatio / len(classItemMap[x])
+
+def sortRatio2(x, classItemMap):
+    if len(classItemMap[x]) == 0:
+        return -1
+
+    totalRatio = 0.0
+    for item in classItemMap[x]:
+        if item.cost == 0 and item.weight == 0:
+            totalRatio += 2 * item.profit
+        elif item.cost == 0:
+            totalRatio += item.profit/item.weight + item.profit
+        elif item.weight == 0:
+            totalRatio +=  item.profit/item.cost + item.profit
+        else:
+            if (item.cost == 0 or item.weight == 0):
+                print("Cost: ", item.cost)
+                print("Weight: ", item.weight)
+            totalRatio += item.profit / (item.cost * item.weight)
+    return totalRatio / len(classItemMap[x])
 
 # def sortRatio3
 
@@ -192,6 +230,14 @@ def sortRatio1(constraint, classItemMap):
 # def sortRatio5
 
 # def sortRatio6
+
+def sortProfitRatio1(constraint, classItemMap):
+    constraint.sort(key = lambda x: sortRatio1(x, classItemMap), reverse=True)
+    return (constraint)
+
+def sortProfitRatio2(constraint, classItemMap):
+    constraint.sort(key = lambda x: sortRatio2(x, classItemMap), reverse=True)
+    return (constraint)
 
 def sortProfitWCRatio(constraint, classItemMap):
     constraint.sort(key = lambda x: profitRatio(x, classItemMap), reverse=True)
@@ -261,7 +307,7 @@ def createItemList(maxCanChooseSet, classItemMap):
   return allItems
 
 def form_constraints(masterList, classItemMap, N):
-    funcNames = [sortNumItems, sortMinWeight, sortMaxProfit, sortMinCost, sortProfitWCRatio]
+    funcNames = [sortMinWeight, sortMaxProfit, sortMinCost, sortProfitWCRatio, sortProfitRatio1, sortProfitRatio2, sortNumItems]
     # funcNames = [sortNumItems]
     canChoose = set()
     noChoose = set()
@@ -313,6 +359,7 @@ def form_constraints(masterList, classItemMap, N):
         maxNoChooseSet = noChoose
         maxFunc = func
 
+      print('maxFunc to sort is ' + maxFunc.__name__)
       itemList = createItemList(maxCanChooseSet, classItemMap)
       return itemList
 
