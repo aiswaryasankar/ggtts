@@ -38,15 +38,69 @@ def sortingFunc(x):
 
     return x.profit/x.cost + x.profit/x.weight
 
-def greedyPick(W, C, N, items):
-    items.sort(key=lambda x: sortingFunc(x), reverse=True)
+def sortingFunc2(x):
+    if x.cost == 0 and x.weight == 0:
+        return x.profit + x.profit
 
-    currCost = 0.0
-    currWeight = 0.0
-    profit = 0.0
-    result = []
-    print("LEN INPUT: ", len(items))
-    for x in items:
+    if x.cost == 0:
+        return x.profit/x.weight + x.profit
+
+    if x.weight == 0:
+        return x.profit/x.cost + x.profit
+
+    return x.profit / (x.cost + x.weight)
+
+def sortingFunc3(x):
+    if x.cost == 0 and x.weight == 0:
+        return x.profit + x.profit
+
+    if x.cost == 0:
+        return x.profit/x.weight + x.profit
+
+    if x.weight == 0:
+        return x.profit/x.cost + x.profit
+
+    return x.profit/x.cost + x.profit/x.weight
+
+def sortingFunc4(x):
+    if x.cost == 0 and x.weight == 0:
+        return x.profit + x.profit
+
+    if x.cost == 0:
+        return x.profit/x.weight + x.profit
+
+    if x.weight == 0:
+        return x.profit/x.cost + x.profit
+
+    return x.profit/(x.cost * x.profit)
+
+def sortingFunc5(x):
+    if x.cost == 0 and x.weight == 0:
+        return x.profit + x.profit
+
+    if x.cost == 0:
+        return x.profit/x.weight + x.profit
+
+    if x.weight == 0:
+        return x.profit/x.cost + x.profit
+
+    return x.profit / np.log(x.cost * x.profit)
+
+def greedyPick(W, C, items):
+    sorts = [sortingFunc, sortingFunc2, sortingFunc3, sortingFunc4, sortingFunc5]
+    maxProfit = 0.0
+    masterResult = []
+    maxFunc = ''
+
+    for sort in sorts:
+      items.sort(key=lambda x: sort(x), reverse=True)
+
+      currCost = 0.0
+      currWeight = 0.0
+      profit = 0.0
+      result = []
+    #   print("LEN INPUT: ", len(items))
+      for x in items:
         if currCost + x.cost > C or currWeight + x.weight > W:
             continue
         else:
@@ -54,15 +108,39 @@ def greedyPick(W, C, N, items):
             currWeight += x.weight
             profit += x.profit
             result.append(x.name)
-    print("PROFIT: ", profit)
-    print("LEN OUTPUT: ", len(result))
-    print()
-    write_scores_output("score_tracker.txt", profit)
-    return result
 
-def write_scores_output(filename, profit):
-  with open(filename, "a") as f:
-    f.write(problem_file_name + ": " + str(profit) + '\n')
+      if profit > maxProfit:
+        maxProfit = profit
+        masterResult = result
+        maxFunc = sort
+
+    #   print("PROFIT WITH SORT " + sort.__name__ + ': ' + str(profit))
+    #   print("LEN INPUT: ", len(result))
+    print('MAX FUNC ' + maxFunc.__name__)
+
+    return (masterResult, maxProfit)
+
+# def greedyPick(W, C, items):
+#     items.sort(key=lambda x: sortingFunc(x), reverse=True)
+#
+#     currCost = 0.0
+#     currWeight = 0.0
+#     profit = 0.0
+#     result = []
+#     # print("LEN INPUT: ", len(items))
+#     for x in items:
+#         if currCost + x.cost > C or currWeight + x.weight > W:
+#             continue
+#         else:
+#             currCost += x.cost
+#             currWeight += x.weight
+#             profit += x.profit
+#             result.append(x.name)
+#     # print("PROFIT: ", profit)
+#     # print("LEN OUTPUT: ", len(result))
+#     # print()
+#
+#     return (result, profit)
 
 def greedyChoose(W, C, N, items):
   itemsList = list(items)
@@ -90,9 +168,9 @@ def greedyChoose(W, C, N, items):
     index += 1
 
   print('the profit sum is ' + str(profitSum))
-  return itemsChosen
+  return (itemsChosen, profit)
 
-def solve(P, M, N, C, items, constraints):
+def solve(P, M, items):
   """
   Write your amazing algorithm here.
 
@@ -100,9 +178,9 @@ def solve(P, M, N, C, items, constraints):
   """
   lst = []
   # result = greedyChoose(int(P), int(M), N, items)
-  result = greedyPick(P, M, N, items)
+  result, profit = greedyPick(P, M, items)
   lst.append(result)
-  return lst
+  return (lst, profit)
 
 """
 ===============================================================================
@@ -183,6 +261,53 @@ def sortNumItems(constraint, classItemMap):
   constraint.sort(key = lambda x: len(classItemMap[x]), reverse=True)
   return (constraint)
 
+def sortRatio1(x, classItemMap):
+    if len(classItemMap[x]) == 0:
+        return -1
+
+    totalRatio = 0.0
+    for item in classItemMap[x]:
+        if item.cost == 0 and item.weight == 0:
+            totalRatio += 2 * item.profit
+        elif item.cost == 0:
+            totalRatio += item.profit/item.weight + item.profit
+        elif item.weight == 0:
+            totalRatio +=  item.profit/item.cost + item.profit
+        else:
+            if (item.cost == 0 or item.weight == 0):
+                print("Cost: ", item.cost)
+                print("Weight: ", item.weight)
+            totalRatio += item.profit / (item.cost + item.weight)
+    return totalRatio / len(classItemMap[x])
+
+def sortRatio2(x, classItemMap):
+    if len(classItemMap[x]) == 0:
+        return -1
+
+    totalRatio = 0.0
+    for item in classItemMap[x]:
+        if item.cost == 0 and item.weight == 0:
+            totalRatio += 2 * item.profit
+        elif item.cost == 0:
+            totalRatio += item.profit/item.weight + item.profit
+        elif item.weight == 0:
+            totalRatio +=  item.profit/item.cost + item.profit
+        else:
+            if (item.cost == 0 or item.weight == 0):
+                print("Cost: ", item.cost)
+                print("Weight: ", item.weight)
+            totalRatio += item.profit / (item.cost * item.weight)
+    return totalRatio / len(classItemMap[x])
+
+def sortProfitRatio1(constraint, classItemMap):
+    constraint.sort(key = lambda x: sortRatio1(x, classItemMap), reverse=True)
+    return (constraint)
+
+def sortProfitRatio2(constraint, classItemMap):
+    constraint.sort(key = lambda x: sortRatio2(x, classItemMap), reverse=True)
+    return (constraint)
+
+
 # def createItemSet(maxCanChooseSet, classItemMap):
 #   # This function needs to take in the constraints and add in the corresponding list from classItemMap
 #   allItemSet = set()
@@ -201,14 +326,18 @@ def createItemList(maxCanChooseSet, classItemMap):
   return allItems
 
 def form_constraints(masterList, classItemMap, N):
-    funcNames = [sortNumItems, sortMinWeight, sortMaxProfit, sortMinCost, sortProfitWCRatio]
+    funcNames = [sortMinWeight, sortMaxProfit, sortMinCost, sortProfitWCRatio, sortProfitRatio1, sortProfitRatio2, sortNumItems]
     # funcNames = [sortNumItems]
     canChoose = set()
     noChoose = set()
 
     maxCanChoose = -1
     maxCanChooseSet = {}
-    maxNoChooseSet = {}
+
+    altCanChoose = -1
+    altCanChooseSet = {}
+
+    chooseSetList = []
 
     classConflicts = {}
     for cls in range(N):
@@ -225,6 +354,7 @@ def form_constraints(masterList, classItemMap, N):
     for func in funcNames:
       canChoose = set()
       noChoose = set()
+      print("USING: ", func.__name__)
 
       for constraint in masterList:
         constraint = func(constraint, classItemMap)
@@ -233,7 +363,6 @@ def form_constraints(masterList, classItemMap, N):
             if cls in canChoose:
                 constraint.remove(cls)
                 noChoose.update(constraint)
-                # print("Continue")
                 continue # Done processing this constraint, move on to next one
 
         # print("HEHE")
@@ -243,102 +372,16 @@ def form_constraints(masterList, classItemMap, N):
                 noChoose.update(classConflicts[cls])
                 break
 
-
       for cls in range(N):
         if cls not in noChoose:
             canChoose.add(cls)
 
-      if len(canChoose) > maxCanChoose:
-        maxCanChoose = len(canChoose)
-        maxCanChooseSet = canChoose
-        maxNoChooseSet = noChoose
-        maxFunc = func
+      chooseSetList.append(canChoose)
 
-      itemList = createItemList(maxCanChooseSet, classItemMap)
-      return itemList
-
-# def form_constraints(masterList, classItemMap, N):
-#     funcNames = [sortNumItems, sortMinWeight, sortMaxProfit, sortMinCost, sortProfitWCRatio]
-#     # funcNames = [sortProfitWCRatio]
-    # maxCanChoose = -1
-    # maxCanChooseSet = {}
-    # maxNoChooseSet = {}
-#     maxFunc = ''
-#
-#     runnerUpCanChoose = -1
-#     runnerUpCanChooseSet = []
-#
-    # for func in funcNames:
-    #   canChoose = set()
-    #   noChoose = set()
-    #
-    #   for constraint in masterList:
-    #     # print("FUNC: ", func.__name__)
-    #     constraint = func(constraint, classItemMap)
-    #     print("C: ", constraint)
-    #
-    #     for cls in constraint:
-    #         print("Class: ", cls)
-    #         if cls in canChoose:
-    #             print("here")
-    #             constraint.remove(cls)
-    #             print("Remove: ", constraint)
-    #             print("No chose: ", noChoose)
-    #             noChoose.update(constraint)
-    #             print("No chose after: ", noChoose)
-    #             break
-    #
-    #     for cls in constraint:
-    #         if cls not in noChoose:
-    #             canChoose.add(cls)
-    #             constraint.remove(cls)
-    #             noChoose.update(constraint)
-    #             break
-    #
-    #   for cls in range(N):
-    #     if cls not in noChoose:
-    #         canChoose.add(cls)
-    #
-    #   itemList = createItemList(canChoose, classItemMap)
-    #   return itemList
-
-
-    #   if len(canChoose) > maxCanChoose:
-    #     maxCanChoose = len(canChoose)
-    #     maxCanChooseSet = canChoose
-    #     maxNoChooseSet = noChoose
-    #     maxFunc = func
-
-    #
-    # maxCanChooseSet.difference_update(maxNoChooseSet)
-    #
-    # itemList = createItemList(maxCanChooseSet, classItemMap)
-
-    # return itemList
-
-        # l = 0
-        #
-        # while (l < len(constraint) and (constraint[l] in noChoose)):
-        #   l += 1
-        # if l < len(constraint):
-        #   canChoose.add(constraint[l])
-        #
-        #   constraint.remove(constraint[l])
-        #   noChoose.update(constraint)
-        #
-        #   if len(canChoose & noChoose) > 0:
-        #     canChoose = canChoose.difference(noChoose)
-        #
-        #   canChoose = canChoose.difference(noChoose)
-
-    #   # Go through and check if number you can choose from is greatest using this func
-    #   if len(canChoose) > maxCanChoose:
-    #     maxCanChoose = len(canChoose)
-    #     maxCanChooseSet = canChoose
-    #     maxFunc = func
-    #
-    # itemSet = createItemSet(maxCanChooseSet, classItemMap)
-
+    itemsList = []
+    for s in chooseSetList:
+        itemsList.append(createItemList(s, classItemMap))
+    return itemsList
 
 def read_input(filename):
   """
@@ -389,9 +432,11 @@ def read_input(filename):
       masterList.append(constraint)
 
     itemList = form_constraints(masterList, classItemMap, N)
-
   return P, M, N, C, itemList, constraints
 
+def write_scores_output(filename, profit):
+  with open(filename, "a") as f:
+    f.write(problem_file_name + ": " + str(profit) + '\n')
 
 def write_output(filename, items_chosen):
   with open(filename, "w") as f:
@@ -399,7 +444,6 @@ def write_output(filename, items_chosen):
       f.write(i + '\n')
 
 if __name__ == "__main__":
-
   parser = argparse.ArgumentParser(description="PickItems solver.")
   parser.add_argument("input_file", type=str, help="____.in")
   parser.add_argument("output_file", type=str, help="____.out")
@@ -408,9 +452,23 @@ if __name__ == "__main__":
   problem_file_name = args.input_file
 
   P, M, N, C, items, constraints = read_input(args.input_file)
-  items_chosen = solve(P, M, len(items), C, items, constraints)
 
-  write_output(args.output_file, items_chosen)
+  result_items = []
+  result_profit = 0
+  index = 0
+  for item in items:
+      print("Solving: ", index)
+      items_chosen, profit = solve(P, M, item)
+      index += 1
+
+      if profit > result_profit:
+          result_items = items_chosen
+          result_profit = profit
+
+  print("PROFIT: ", result_profit)
+
+  write_output(args.output_file, result_items)
+  write_scores_output("score_tracker.txt", result_profit)
 
 def createConstraints(classes):
   # Generate random number of elements for the constraint
